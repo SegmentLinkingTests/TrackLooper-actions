@@ -1,13 +1,12 @@
 #!/bin/env bash
 
 # Validate the cmssw branch name to avoid code injection
-if ! [[ $CMSSW_BRANCH =~ ^[[:alnum:]_-]+$ ]]; then
-  echo "Branch name is invalid. Ignoring..."
-  CMSSW_BRANCH=default
+if [ -n "$CMSSW_BRANCH" ]; then
+  CMSSW_BRANCH=$(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 fi
 # Set the CMSSW branch to use
 if [ -z "$CMSSW_BRANCH" ] || [ "$CMSSW_BRANCH" == "default" ]; then
-    CMSSW_BRANCH=CMSSW_13_3_0_pre3_LST_X
+  CMSSW_BRANCH=CMSSW_13_3_0_pre3_LST_X
 fi
 
 # Exit if any command fails
