@@ -4,10 +4,11 @@
 CMSSW_BRANCH=(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 
 # Set the CMSSW branch to use
+# When using a non-default branch comparison plots are not made because the changes in both repos presumably depend on each other
+COMPARE_TO_MASTER=false
 if [ -z "$CMSSW_BRANCH" ] || [ "$CMSSW_BRANCH" == "default" ]; then
   CMSSW_BRANCH=CMSSW_13_3_0_pre3_LST_X
-  # When using a non-default branch comparison plots are not made because the changes in both repos presumably depend on each other
-  COMPARE_TO_MASTER=false
+  COMPARE_TO_MASTER=true
 fi
 
 # Exit if any command fails
@@ -62,7 +63,7 @@ cmsRun step4_HARVESTING.py
 mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root after.root
 rm step3_*.root
 
-if [ "$COMPARE_TO_MASTER" != false ]; then
+if [ "$COMPARE_TO_MASTER" == "true" ]; then
   # Checkout the master branch so we can compare what has changed
   cd ../..
   git fetch origin master
