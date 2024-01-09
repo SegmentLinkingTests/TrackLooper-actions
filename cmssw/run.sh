@@ -5,19 +5,21 @@ CMSSW_BRANCH=(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 
 # Set the CMSSW branch to use
 if [ -z "$CMSSW_BRANCH" ] || [ "$CMSSW_BRANCH" == "default" ]; then
-    CMSSW_BRANCH=CMSSW_13_3_0_pre3_LST_X
+  CMSSW_BRANCH=CMSSW_13_3_0_pre3_LST_X
+  # When using a non-default branch comparison plots are not made because the changes in both repos presumably depend on each other
+  COMPARE_TO_MASTER=false
 fi
 
 # Exit if any command fails
 set -e
 
-# Build and run the PR. Create validation plots
+# Build and run the PR
 echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
 make code/rooutil/
 sdl_make_tracklooper -c || echo "Done"
-if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log; false; fi
+if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
 echo "Setting up CMSSW..."
 scramv1 project CMSSW $CMSSW_VERSION
 cd $CMSSW_VERSION/src
@@ -57,14 +59,44 @@ cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsDriver.py step4 -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM --conditions auto:phase2_realistic_T21 --mc  --geometry Extended2026D88 --scenario pp --filetype DQM --era Phase2C17I13M9 -n 10 --no_exec
 sed -i "s|fileNames = cms.untracked.vstring('file:step4_RECO.root')|fileNames = cms.untracked.vstring('file:step3_RAW2DIGI_RECO_VALIDATION_DQM_inDQM.root')|" step4_HARVESTING.py
 cmsRun step4_HARVESTING.py
-makeTrackValidationPlots.py --extended -o plots_pdf DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root
-makeTrackValidationPlots.py --extended --png -o plots_png DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root
-mkdir plots
+mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root after.root
+rm step3_*.root
+
+if [ "$COMPARE_TO_MASTER" != false ]; then
+  # Checkout the master branch so we can compare what has changed
+  cd ../..
+  git fetch origin master
+  git checkout origin/master
+
+  # Build and run master
+  echo "Running setup script..."
+  source setup.sh
+  echo "Building and LST..."
+  make clean
+  make code/rooutil/
+  sdl_make_tracklooper -c || echo "Done"
+  if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
+  cd $CMSSW_VERSION/src
+  eval `scramv1 runtime -sh`
+  echo "Running 21034.1 workflow..."
+  cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
+  cmsRun step4_HARVESTING.py
+  mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root before.root
+
+  # Create comparison plots
+  makeTrackValidationPlots.py --extended -o plots_pdf before.root after.root
+  makeTrackValidationPlots.py --extended --png -o plots_png before.root after.root
+else
+  # Create validation plots
+  makeTrackValidationPlots.py --extended -o plots_pdf after.root
+  makeTrackValidationPlots.py --extended --png -o plots_png after.root
+fi
 
 # Copy a few plots that will be attached in the PR comment
 mkdir $TRACKLOOPERDIR/$ARCHIVE_DIR
 cp plots_png/plots_ootb/effandfakePtEtaPhi.png $TRACKLOOPERDIR/$ARCHIVE_DIR
 
+mkdir plots
 cp -r plots_pdf/plots_ootb plots
 cp -r plots_pdf/plots_highPurity plots
 cp -r plots_pdf/plots_building_highPtTripletStep plots
