@@ -60,7 +60,7 @@ cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsDriver.py step4 -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM --conditions auto:phase2_realistic_T21 --mc  --geometry Extended2026D88 --scenario pp --filetype DQM --era Phase2C17I13M9 -n 10 --no_exec
 sed -i "s|fileNames = cms.untracked.vstring('file:step4_RECO.root')|fileNames = cms.untracked.vstring('file:step3_RAW2DIGI_RECO_VALIDATION_DQM_inDQM.root')|" step4_HARVESTING.py
 cmsRun step4_HARVESTING.py
-mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root after.root
+mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root This_PR.root
 rm step3_*.root
 
 if [ "$COMPARE_TO_MASTER" == "true" ]; then
@@ -82,15 +82,15 @@ if [ "$COMPARE_TO_MASTER" == "true" ]; then
   echo "Running 21034.1 workflow..."
   cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
   cmsRun step4_HARVESTING.py
-  mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root before.root
+  mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root master.root
 
   # Create comparison plots
-  makeTrackValidationPlots.py --extended -o plots_pdf before.root after.root
-  makeTrackValidationPlots.py --extended --png -o plots_png before.root after.root
+  makeTrackValidationPlots.py --extended -o plots_pdf This_PR.root master.root
+  makeTrackValidationPlots.py --extended --png -o plots_png This_PR.root master.root
 else
   # Create validation plots
-  makeTrackValidationPlots.py --extended -o plots_pdf after.root
-  makeTrackValidationPlots.py --extended --png -o plots_png after.root
+  makeTrackValidationPlots.py --extended -o plots_pdf This_PR.root
+  makeTrackValidationPlots.py --extended --png -o plots_png This_PR.root
 fi
 
 # Copy a few plots that will be attached in the PR comment
