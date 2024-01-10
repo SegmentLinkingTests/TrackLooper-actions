@@ -9,7 +9,7 @@ source setup.sh
 echo "Building and LST..."
 make code/rooutil/
 sdl_make_tracklooper -c || echo "Done"
-if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log; false; fi
+if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
 echo "Running LST..."
 rm SDL/libsdl_cuda.so
 sdl -i PU200 -o LSTNtuple_after.root -s 2
@@ -18,6 +18,7 @@ echo "Creating validation plots..."
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
 
 # Checkout the master branch so we can compare what has changed
+PRSHA=$(git rev-parse HEAD)
 git fetch origin master
 git checkout origin/master
 
@@ -28,12 +29,14 @@ echo "Building and LST..."
 make clean
 make code/rooutil/
 sdl_make_tracklooper -cC || echo "Done"
-if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log; false; fi
+if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
 echo "Running LST..."
 sdl -i PU200 -o LSTNtuple_before.root -s 2
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
+# Go back to the PR commit so that the git tag is consistent everywhere
+git checkout $PRSHA
 echo "Creating comparison plots..."
-python3 efficiency/python/lst_plot_performance.py --compare LSTNumDen_before.root LSTNumDen_after.root --comp_labels before,after -t "comparison_plots"
+python3 efficiency/python/lst_plot_performance.py --compare LSTNumDen_after.root LSTNumDen_before.root --comp_labels This_PR,master -t "comparison_plots"
 
 # Copy a few plots that will be attached in the PR comment
 mkdir $ARCHIVE_DIR
