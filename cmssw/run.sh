@@ -66,6 +66,7 @@ rm step3_*.root
 if [ "$COMPARE_TO_MASTER" == "true" ]; then
   # Checkout the master branch so we can compare what has changed
   cd ../..
+  PRSHA=$(git rev-parse HEAD)
   git fetch origin master
   git checkout origin/master
 
@@ -83,6 +84,10 @@ if [ "$COMPARE_TO_MASTER" == "true" ]; then
   cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
   cmsRun step4_HARVESTING.py
   mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root master.root
+  # Go back to the PR commit so that the git tag is consistent everywhere
+  cd ../..
+  git checkout $PRSHA
+  cd $CMSSW_VERSION/src
 
   # Create comparison plots
   makeTrackValidationPlots.py --extended -o plots_pdf This_PR.root master.root

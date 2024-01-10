@@ -18,6 +18,7 @@ echo "Creating validation plots..."
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
 
 # Checkout the master branch so we can compare what has changed
+PRSHA=$(git rev-parse HEAD)
 git fetch origin master
 git checkout origin/master
 
@@ -32,6 +33,8 @@ if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log*; 
 echo "Running LST..."
 sdl -i PU200 -o LSTNtuple_before.root -s 2
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
+# Go back to the PR commit so that the git tag is consistent everywhere
+git checkout $PRSHA
 echo "Creating comparison plots..."
 python3 efficiency/python/lst_plot_performance.py --compare LSTNumDen_after.root LSTNumDen_before.root --comp_labels This_PR,master -t "comparison_plots"
 
