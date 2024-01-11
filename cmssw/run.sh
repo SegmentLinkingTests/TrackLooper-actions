@@ -31,6 +31,15 @@ git remote add SegLink https://github.com/SegmentLinking/cmssw.git
 git fetch SegLink $CMSSW_BRANCH
 git checkout $CMSSW_BRANCH
 git cms-addpkg RecoTracker/LST Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
+cat <<EOF >lst_headers.xml
+<tool name="lst_headers" version="1.0">
+  <client>
+    <environment name="LSTBASE" default="$PWD/../../../TrackLooper"/>
+    <environment name="INCLUDE" default="\$LSTBASE"/>
+  </client>
+  <runtime name="LST_BASE" value="\$LSTBASE"/>
+</tool>
+EOF
 cat <<EOF >lst_cpu.xml
 <tool name="lst_cpu" version="1.0">
   <client>
@@ -42,6 +51,7 @@ cat <<EOF >lst_cpu.xml
   <lib name="sdl_cpu"/>
 </tool>
 EOF
+scram setup lst_headers.xml
 scram setup lst_cpu.xml
 eval `scramv1 runtime -sh`
 # We need to remove the Cuda plugin because it fails to compile if there is no GPU
