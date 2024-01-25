@@ -7,7 +7,7 @@ if [[ "$CMSSW_BRANCH" =~ ^[0-9]+$ ]]; then
 fi
 echo $CMSSW_BRANCH
 echo $CMSSW_BRANCH | cat -v
-CMSSW_BRANCH=(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
+CMSSW_BRANCH=$(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 
 # Set the CMSSW branch to use
 # When using a non-default branch comparison plots are not made because the changes in both repos presumably depend on each other
