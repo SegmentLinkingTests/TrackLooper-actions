@@ -1,14 +1,15 @@
 #!/bin/env bash
 
-# Validate the cmssw branch name to avoid code injection
-CMSSW_BRANCH=$(echo $CMSSW_BRANCH | tr -d '[:cntrl:]') # remove \r and other control characters that could be in there.
-if [[ "$CMSSW_BRANCH" =~ ^[0-9]+$ ]]; then
-  CMSSW_BRANCH=refs/pull/${CMSSW_BRANCH}/head
+if [ -n "$CMSSW_BRANCH" ]; then
+  # Remove \r and other control characters that could be in there (newline characters in github are \r\n)
+  CMSSW_BRANCH=$(echo $CMSSW_BRANCH | tr -d '[:cntrl:]')
+  # If the branch is an integer, interpret it as a PR number
+  if [[ "$CMSSW_BRANCH" =~ ^[0-9]+$ ]]; then
+    CMSSW_BRANCH="refs/pull/${CMSSW_BRANCH}/head"
+  fi
+  # Validate the cmssw branch name to avoid code injection
+  CMSSW_BRANCH=$(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 fi
-echo $CMSSW_BRANCH
-echo $CMSSW_BRANCH | cat -v
-CMSSW_BRANCH=$(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
-
 # Set the CMSSW branch to use
 # When using a non-default branch comparison plots are not made because the changes in both repos presumably depend on each other
 COMPARE_TO_MASTER=false
@@ -33,8 +34,8 @@ cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
 git cms-init --upstream-only
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
-git fetch SegLink $CMSSW_BRANCH
-git checkout $CMSSW_BRANCH
+git fetch SegLink ${CMSSW_BRANCH}:SegLink_cmssw
+git checkout SegLink_cmssw
 git cms-addpkg RecoTracker/LST Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
 cat <<EOF >lst_cpu.xml
 <tool name="lst_cpu" version="1.0">
@@ -52,7 +53,7 @@ eval `scramv1 runtime -sh`
 # We need to remove the Cuda plugin because it fails to compile if there is no GPU
 sed -i '/<library file="alpaka\/\*\.cc" name="RecoTrackerLSTPluginsPortableCuda">/,/<\/library>/d' RecoTracker/LST/plugins/BuildFile.xml
 echo "Building CMSSW..."
-scram b -j 2
+scram b -j 4
 echo "Starting LST test..."
 cmsDriver.py step3  -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM --conditions auto:phase2_realistic_T21 --datatier GEN-SIM-RECO,DQMIO -n 10 --eventcontent RECOSIM,DQM --geometry Extended2026D88 --era Phase2C17I13M9 --procModifiers trackingLST,trackingIters01 --no_exec
 sed -i "28i process.load('Configuration.StandardSequences.Accelerators_cff')\nprocess.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
