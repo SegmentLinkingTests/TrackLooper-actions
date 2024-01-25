@@ -2,6 +2,9 @@
 
 # Validate the cmssw branch name to avoid code injection
 CMSSW_BRANCH=$(echo $CMSSW_BRANCH | tr -d '[:cntrl:]') # remove \r and other control characters that could be in there.
+if [[ "$CMSSW_BRANCH" =~ ^[0-9]+$ ]]; then
+  CMSSW_BRANCH=refs/pull/${CMSSW_BRANCH}/head
+fi
 CMSSW_BRANCH=(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 
 # Set the CMSSW branch to use
