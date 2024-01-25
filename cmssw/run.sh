@@ -57,7 +57,7 @@ eval `scramv1 runtime -sh`
 # We need to remove the Cuda plugin because it fails to compile if there is no GPU
 sed -i '/<library file="alpaka\/\*\.cc" name="RecoTrackerLSTPluginsPortableCuda">/,/<\/library>/d' RecoTracker/LST/plugins/BuildFile.xml
 echo "Building CMSSW..."
-scram b -j 2
+scram b -j 4
 echo "Starting LST test..."
 cmsDriver.py step3  -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM --conditions auto:phase2_realistic_T21 --datatier GEN-SIM-RECO,DQMIO -n 10 --eventcontent RECOSIM,DQM --geometry Extended2026D88 --era Phase2C17I13M9 --procModifiers trackingLST,trackingIters01 --no_exec
 sed -i "28i process.load('Configuration.StandardSequences.Accelerators_cff')\nprocess.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
