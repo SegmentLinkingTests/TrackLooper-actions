@@ -1,6 +1,7 @@
 #!/bin/env bash
 
 # Validate the cmssw branch name to avoid code injection
+CMSSW_BRANCH=$(echo $CMSSW_BRANCH | tr -d '[:cntrl:]') # remove \r and other control characters that could be in there.
 CMSSW_BRANCH=(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 
 # Set the CMSSW branch to use
