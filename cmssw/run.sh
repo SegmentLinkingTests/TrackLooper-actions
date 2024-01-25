@@ -5,6 +5,8 @@ CMSSW_BRANCH=$(echo $CMSSW_BRANCH | tr -d '[:cntrl:]') # remove \r and other con
 if [[ "$CMSSW_BRANCH" =~ ^[0-9]+$ ]]; then
   CMSSW_BRANCH=refs/pull/${CMSSW_BRANCH}/head
 fi
+echo $CMSSW_BRANCH
+echo $CMSSW_BRANCH | cat -v
 CMSSW_BRANCH=(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 
 # Set the CMSSW branch to use
