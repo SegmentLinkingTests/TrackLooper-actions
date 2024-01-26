@@ -1,7 +1,9 @@
 #!/bin/env bash
 
-# Validate the cmssw branch name to avoid code injection
 if [ -n "$CMSSW_BRANCH" ]; then
+  # Remove \r and other control characters that could be in there (newline characters in github are \r\n)
+  CMSSW_BRANCH=$(echo $CMSSW_BRANCH | tr -d '[:cntrl:]')
+  # Validate the cmssw branch name to avoid code injection
   CMSSW_BRANCH=$(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 fi
 # Set the CMSSW branch to use
