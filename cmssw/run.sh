@@ -3,6 +3,10 @@
 if [ -n "$CMSSW_BRANCH" ]; then
   # Remove \r and other control characters that could be in there (newline characters in github are \r\n)
   CMSSW_BRANCH=$(echo $CMSSW_BRANCH | tr -d '[:cntrl:]')
+  # If the branch is an integer, interpret it as a PR number
+  if [[ "$CMSSW_BRANCH" =~ ^[0-9]+$ ]]; then
+    CMSSW_BRANCH="refs/pull/${CMSSW_BRANCH}/head"
+  fi
   # Validate the cmssw branch name to avoid code injection
   CMSSW_BRANCH=$(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 fi
@@ -30,8 +34,8 @@ cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
 git cms-init --upstream-only
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
-git fetch SegLink $CMSSW_BRANCH
-git checkout $CMSSW_BRANCH
+git fetch SegLink ${CMSSW_BRANCH}:SegLink_cmssw
+git checkout SegLink_cmssw
 git cms-addpkg RecoTracker/LST Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
 cat <<EOF >lst_headers.xml
 <tool name="lst_headers" version="1.0">
