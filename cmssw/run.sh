@@ -107,8 +107,8 @@ if [ "$COMPARE_TO_MASTER" == "true" ]; then
   cd $CMSSW_VERSION/src
 
   # Create comparison plots
-  makeTrackValidationPlots.py --extended -o plots_pdf This_PR.root master.root
-  makeTrackValidationPlots.py --extended --png -o plots_png This_PR.root master.root
+  makeTrackValidationPlots.py --extended -o plots_pdf master.root This_PR.root
+  makeTrackValidationPlots.py --extended --png -o plots_png master.root This_PR.root
 else
   # Create validation plots
   makeTrackValidationPlots.py --extended -o plots_pdf This_PR.root
