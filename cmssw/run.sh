@@ -1,73 +1,34 @@
 #!/bin/env bash
 
-CMSSW_DEFAULT_BRANCH=CMSSW_14_1_0_pre3_LST_X
+# Set the "master" CMSSW branch
+MASTER_BRANCH=LSTCore_devel
 
-if [ -n "$CMSSW_BRANCH" ]; then
-  # Remove \r and other control characters that could be in there (newline characters in github are \r\n)
-  CMSSW_BRANCH=$(echo $CMSSW_BRANCH | tr -d '[:cntrl:]')
-  # If the branch is an integer, interpret it as a PR number
-  if [[ "$CMSSW_BRANCH" =~ ^[0-9]+$ ]]; then
-    CMSSW_BRANCH="refs/pull/${CMSSW_BRANCH}/head"
-  fi
-  # Validate the cmssw branch name to avoid code injection
-  CMSSW_BRANCH=$(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
-fi
-# Set the CMSSW branch to the default one if not specified
-if [ -z "$CMSSW_BRANCH" ] || [ "$CMSSW_BRANCH" == "default" ]; then
-  CMSSW_BRANCH=$CMSSW_DEFAULT_BRANCH
-fi
+CMSSW_VERSION=CMSSW_14_1_0_pre3
 
 # Print all commands and exit on error
 set -e -v
 
 # Temporarily merge the master branch
-git checkout -b pr_branch
-git fetch --unshallow || echo "" # It might be worth switching actions/checkout to use depth 0 later on
-git config user.email "gha@example.com" && git config user.name "GHA" # For some reason this is needed even though nothing is being committed
-git merge --no-commit --no-ff origin/master || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+# git checkout -b pr_branch
+# git fetch --unshallow || echo "" # It might be worth switching actions/checkout to use depth 0 later on
+# git config user.email "gha@example.com" && git config user.name "GHA" # For some reason this is needed even though nothing is being committed
+# git merge --no-commit --no-ff origin/${MASTER_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 
 # Build and run the PR
-echo "Running setup script..."
-source setup.sh
-echo "Building and LST..."
-sdl_make_tracklooper -mcAs
-echo "Setting up CMSSW..."
+echo "Initializing CMSSW..."
+source /cvmfs/cms.cern.ch/cmsset_default.sh
 scramv1 project CMSSW $CMSSW_VERSION
 cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
 git cms-init --upstream-only
-git remote add SegLink https://github.com/SegmentLinking/cmssw.git
+git remote add SegLink https://github.com/SegmentLinkingTests/cmssw.git
 git fetch SegLink ${CMSSW_BRANCH}:SegLink_cmssw
 git checkout SegLink_cmssw
 git fetch SegLink $CMSSW_DEFAULT_BRANCH
 git config user.email "gha@example.com" && git config user.name "GHA"
-git merge -m "Merge default branch" SegLink/$CMSSW_DEFAULT_BRANCH || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
-git cms-addpkg RecoTracker/LST Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
-cat <<EOF >lst_headers.xml
-<tool name="lst_headers" version="1.0">
-  <client>
-    <environment name="LSTBASE" default="$PWD/../../../TrackLooper"/>
-    <environment name="INCLUDE" default="\$LSTBASE"/>
-  </client>
-  <runtime name="LST_BASE" value="\$LSTBASE"/>
-</tool>
-EOF
-cat <<EOF >lst_cpu.xml
-<tool name="lst_cpu" version="1.0">
-  <client>
-    <environment name="LSTBASE" default="$PWD/../../../TrackLooper"/>
-    <environment name="LIBDIR" default="\$LSTBASE/SDL"/>
-    <environment name="INCLUDE" default="\$LSTBASE"/>
-  </client>
-  <runtime name="LST_BASE" value="\$LSTBASE"/>
-  <lib name="sdl_cpu"/>
-</tool>
-EOF
-scram setup lst_headers.xml
-scram setup lst_cpu.xml
+git merge --no-commit --no-ff SegLink/${MASTER_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git cms-addpkg RecoTracker/LST RecoTracker/LSTCore Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
 eval `scramv1 runtime -sh`
-# We need to remove the Cuda plugin because it fails to compile if there is no GPU
-sed -i '/<library file="alpaka\/\*\.cc" name="RecoTrackerLSTPluginsPortableCuda">/,/<\/library>/d' RecoTracker/LST/plugins/BuildFile.xml
 echo "Building CMSSW..."
 scram b -j 4
 echo "Starting LST test..."

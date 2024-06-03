@@ -34,7 +34,7 @@ runs:
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
-        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_cmssw
+        ARCHIVE_DIR=${{ github.workspace }}/PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_cmssw
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         COMMENT=$(cat <<EOF
         The PR was built and ran successfully with CMSSW. Here are some plots.
@@ -81,5 +81,5 @@ runs:
           -w /home/TrackLooper
           -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
           -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
-          -e CMSSW_BRANCH=${{ inputs.cmssw-branch }}
+          -e PR_NUMBER=${{ inputs.pr-number }}
         run: ./run.sh
