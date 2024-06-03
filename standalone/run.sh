@@ -9,7 +9,12 @@ git fetch --unshallow || echo "" # It might be worth switching actions/checkout 
 git config user.email "gha@example.com" && git config user.name "GHA" # For some reason this is needed even though nothing is being committed
 git merge --no-commit --no-ff origin/master || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 
+# Download data files
+cd RecoTracker/LSTCore
+git clone --branch initial https://github.com/SegmentLinking/RecoTracker-LSTCore.git data
+
 # Build and run the PR. Create validation plots
+cd standalone
 echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
