@@ -18,7 +18,7 @@ eval `scramv1 runtime -sh`
 # git cms-init --upstream-only
 git init
 git remote add SegLink https://github.com/SegmentLinkingTests/cmssw.git
-git sparse checkout set .gitignore .clang-format .clangtidy
+git sparse-checkout set .gitignore .clang-format .clangtidy
 git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
 git checkout SegLink_cmssw
 git fetch SegLink $MASTER_BRANCH
