@@ -8,23 +8,21 @@ CMSSW_VERSION=CMSSW_14_1_0_pre3
 # Print all commands and exit on error
 set -e -v
 
-# Temporarily merge the master branch
-# git checkout -b pr_branch
-# git fetch --unshallow || echo "" # It might be worth switching actions/checkout to use depth 0 later on
-# git config user.email "gha@example.com" && git config user.name "GHA" # For some reason this is needed even though nothing is being committed
-# git merge --no-commit --no-ff origin/${MASTER_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
-
 # Build and run the PR
 echo "Initializing CMSSW..."
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 scramv1 project CMSSW $CMSSW_VERSION
 cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
-git cms-init --upstream-only
+# cms-init is too slow
+# git cms-init --upstream-only
+git init
 git remote add SegLink https://github.com/SegmentLinkingTests/cmssw.git
+git sparse checkout set .gitignore .clang-format .clangtidy
 git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
 git checkout SegLink_cmssw
-git fetch SegLink $CMSSW_DEFAULT_BRANCH
+git fetch SegLink $MASTER_BRANCH
+# Temporarily merge master branch
 git config user.email "gha@example.com" && git config user.name "GHA"
 git merge --no-commit --no-ff SegLink/${MASTER_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git cms-addpkg RecoTracker/LST RecoTracker/LSTCore Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
@@ -48,31 +46,21 @@ mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root This_PR.root
 rm step3_*.root
 
 # Checkout the master branch so we can compare what has changed
-cd ../..
 git stash
 PRSHA=$(git rev-parse HEAD)
-git checkout origin/master
+git checkout SegLink/${MASTER_BRANCH}
 
 # Build and run master
-echo "Running setup script..."
-source setup.sh
-echo "Building and LST..."
-sdl_make_tracklooper -mcCs
-cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
 # Recompile CMSSW in case anything changed in the headers
 scram b clean
-# Go back to the default branch
-git checkout SegLink/$CMSSW_DEFAULT_BRANCH
 scram b -j 4
 echo "Running 21034.1 workflow..."
 cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsRun step4_HARVESTING.py
 mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root master.root
 # Go back to the PR commit so that the git tag is consistent everywhere
-cd ../..
 git checkout $PRSHA
-cd $CMSSW_VERSION/src
 
 # Create comparison plots
 makeTrackValidationPlots.py --extended -o plots_pdf master.root This_PR.root
