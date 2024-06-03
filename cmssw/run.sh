@@ -22,7 +22,7 @@ cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
 git cms-init --upstream-only
 git remote add SegLink https://github.com/SegmentLinkingTests/cmssw.git
-git fetch SegLink ${CMSSW_BRANCH}:SegLink_cmssw
+git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
 git checkout SegLink_cmssw
 git fetch SegLink $CMSSW_DEFAULT_BRANCH
 git config user.email "gha@example.com" && git config user.name "GHA"
@@ -79,12 +79,12 @@ makeTrackValidationPlots.py --extended -o plots_pdf master.root This_PR.root
 makeTrackValidationPlots.py --extended --png -o plots_png master.root This_PR.root
 
 # Copy a few plots that will be attached in the PR comment
-mkdir $TRACKLOOPERDIR/$ARCHIVE_DIR
-cp plots_png/plots_ootb/effandfakePtEtaPhi.png $TRACKLOOPERDIR/$ARCHIVE_DIR
+mkdir $ARCHIVE_DIR
+cp plots_png/plots_ootb/effandfakePtEtaPhi.png $ARCHIVE_DIR
 
 mkdir plots
 cp -r plots_pdf/plots_ootb plots
 cp -r plots_pdf/plots_highPurity plots
 cp -r plots_pdf/plots_building_highPtTripletStep plots
 rm -r plots/plots_ootb/*/ plots/plots_highPurity/*/ plots/plots_building_highPtTripletStep/*/
-tar zcf $TRACKLOOPERDIR/$ARCHIVE_DIR/plots.tar.gz plots
+tar zcf $ARCHIVE_DIR/plots.tar.gz plots
