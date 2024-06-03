@@ -33,7 +33,7 @@ runs:
       id: output-vars
       shell: bash
       run: |
-        ARCHIVE_REPO=SegmentLinking/TrackLooper-plots-archive
+        ARCHIVE_REPO=SegmentLinkingTests/TrackLooper-plots-archive
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
