@@ -48,13 +48,13 @@ echo "Creating comparison plots..."
 python3 efficiency/python/lst_plot_performance.py --compare LSTNumDen_after.root LSTNumDen_before.root --comp_labels This_PR,master -t "comparison_plots"
 
 # Copy a few plots that will be attached in the PR comment
-mkdir $ARCHIVE_DIR
-cp performance/comparison_plots*/mtv/var/TC_base_0_0_eff_ptzoom.png        $ARCHIVE_DIR/eff_pt_comp.png
-cp performance/comparison_plots*/mtv/var/TC_base_0_0_eff_etacoarsezoom.png $ARCHIVE_DIR/eff_eta_comp.png
-cp performance/comparison_plots*/mtv/var/TC_fakerate_ptzoom.png            $ARCHIVE_DIR/fake_pt_comp.png
-cp performance/comparison_plots*/mtv/var/TC_fakerate_etacoarsezoom.png     $ARCHIVE_DIR/fake_eta_comp.png
-cp performance/comparison_plots*/mtv/var/TC_duplrate_ptzoom.png            $ARCHIVE_DIR/dup_pt_comp.png
-cp performance/comparison_plots*/mtv/var/TC_duplrate_etacoarsezoom.png     $ARCHIVE_DIR/dup_eta_comp.png
+mkdir /home/TrackLooper/$ARCHIVE_DIR
+cp performance/comparison_plots*/mtv/var/TC_base_0_0_eff_ptzoom.png        /home/TrackLooper/$ARCHIVE_DIR/eff_pt_comp.png
+cp performance/comparison_plots*/mtv/var/TC_base_0_0_eff_etacoarsezoom.png /home/TrackLooper/$ARCHIVE_DIR/eff_eta_comp.png
+cp performance/comparison_plots*/mtv/var/TC_fakerate_ptzoom.png            /home/TrackLooper/$ARCHIVE_DIR/fake_pt_comp.png
+cp performance/comparison_plots*/mtv/var/TC_fakerate_etacoarsezoom.png     /home/TrackLooper/$ARCHIVE_DIR/fake_eta_comp.png
+cp performance/comparison_plots*/mtv/var/TC_duplrate_ptzoom.png            /home/TrackLooper/$ARCHIVE_DIR/dup_pt_comp.png
+cp performance/comparison_plots*/mtv/var/TC_duplrate_etacoarsezoom.png     /home/TrackLooper/$ARCHIVE_DIR/dup_eta_comp.png
 
 # Delete some of the data to make the archive smaller
 cd performance
@@ -64,4 +64,4 @@ find . -type f -name "*_13_0_*" -delete
 find . -type f -name "*_211_0_*" -delete
 find . -type f -name "*_321_0_*" -delete
 cd ..
-tar zcf $ARCHIVE_DIR/plots.tar.gz performance
+tar zcf /home/TrackLooper/$ARCHIVE_DIR/plots.tar.gz performance
