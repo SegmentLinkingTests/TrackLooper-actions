@@ -30,7 +30,6 @@ eval `scramv1 runtime -sh`
 echo "Building CMSSW..."
 scram b -j 4
 # Download data files
-cd RecoTracker/LSTCore
 git clone --branch initial https://github.com/SegmentLinking/RecoTracker-LSTCore.git RecoTracker/LSTCore/data
 echo "Starting LST test..."
 cmsDriver.py step3 -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM --conditions auto:phase2_realistic_T21 --datatier GEN-SIM-RECO,DQMIO -n 100 --eventcontent RECOSIM,DQM --geometry Extended2026D88 --era Phase2C17I13M9 --procModifiers trackingLST,trackingIters01 --nThreads 4 --no_exec
