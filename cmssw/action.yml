@@ -82,9 +82,6 @@ runs:
             pull_number: "${{ inputs.pr-number }}",
           });
           return pullRequest.base.ref;
-    - name: Print target branch
-      run: echo "Target branch ${{ steps.get_target_branch.outputs.result }}"
-      shell: bash
     - name: Build and run in Docker container
       uses: addnab/docker-run-action@v3
       with:
@@ -97,4 +94,5 @@ runs:
           -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
           -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
           -e PR_NUMBER=${{ inputs.pr-number }}
+          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
         run: ./run.sh

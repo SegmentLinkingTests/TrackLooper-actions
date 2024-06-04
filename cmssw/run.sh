@@ -1,8 +1,5 @@
 #!/bin/env bash
 
-# Set the "master" CMSSW branch
-MASTER_BRANCH=LSTCore_devel
-
 CMSSW_VERSION=CMSSW_14_1_0_pre3
 
 # Print all commands and exit on error
@@ -21,10 +18,10 @@ git remote add SegLink https://github.com/SegmentLinkingTests/cmssw.git
 git sparse-checkout set .gitignore .clang-format .clangtidy
 git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
 git checkout SegLink_cmssw
-git fetch SegLink $MASTER_BRANCH
-# Temporarily merge master branch
+git fetch SegLink $TARGET_BRANCH
+# Temporarily merge target branch
 git config user.email "gha@example.com" && git config user.name "GHA"
-git merge --no-commit --no-ff SegLink/${MASTER_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git cms-addpkg RecoTracker/LST RecoTracker/LSTCore Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
 eval `scramv1 runtime -sh`
 echo "Building CMSSW..."
@@ -50,7 +47,7 @@ rm step3_*.root
 # Checkout the master branch so we can compare what has changed
 git stash
 PRSHA=$(git rev-parse HEAD)
-git checkout SegLink/${MASTER_BRANCH}
+git checkout SegLink/${TARGET_BRANCH}
 
 # Build and run master
 eval `scramv1 runtime -sh`

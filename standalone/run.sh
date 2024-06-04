@@ -1,16 +1,13 @@
 #!/bin/env bash
 
-# Set the "master" CMSSW branch
-MASTER_BRANCH=LSTCore_devel
-
 # Print all commands and exit on error
 set -e -v
 
-# Temporarily merge the master branch
+# Temporarily merge the target branch
 git checkout -b pr_branch
 git fetch --unshallow || echo "" # It might be worth switching actions/checkout to use depth 0 later on
 git config user.email "gha@example.com" && git config user.name "GHA" # For some reason this is needed even though nothing is being committed
-git merge --no-commit --no-ff origin/${MASTER_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git merge --no-commit --no-ff origin/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 
 # Download data files
 cd RecoTracker/LSTCore
@@ -23,7 +20,7 @@ source setup.sh
 echo "Building and LST..."
 sdl_make_tracklooper -mcAs
 echo "Running LST..."
-sdl_cpu -i PU200 -o LSTNtuple_after.root -s 4 -v 1 | tee -a timing_PR.txt
+sdl_cpu -i PU200 -o LSTNtuple_after.root -s 4 -v 1 | tee -a /home/TrackLooper/timing_PR.txt
 createPerfNumDenHists -i LSTNtuple_after.root -o LSTNumDen_after.root
 echo "Creating validation plots..."
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
@@ -31,7 +28,7 @@ python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "valid
 # Checkout the master branch so we can compare what has changed
 git stash
 PRSHA=$(git rev-parse HEAD)
-git checkout origin/${MASTER_BRANCH}
+git checkout origin/${TARGET_BRANCH}
 
 # Build and run master. Create comparison plots
 echo "Running setup script..."
@@ -40,7 +37,7 @@ echo "Building and LST..."
 # Only CPU version is compiled since the master branch has already been tested
 sdl_make_tracklooper -mcCs
 echo "Running LST..."
-sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 | tee -a timing_master.txt
+sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 | tee -a /home/TrackLooper/timing_master.txt
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
 # Go back to the PR commit so that the git tag is consistent everywhere
 git checkout $PRSHA
