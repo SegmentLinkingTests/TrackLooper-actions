@@ -76,7 +76,7 @@ runs:
       with:
         route: GET /repos/${{ github.repository_owner }}/cmssw/pulls/${{ inputs.pr-number }}
     - name: Print target branch
-      run: echo "Target branch: ${{ steps.pr_details.outputs.data.base.ref }}"
+      run: echo "Target branch ${{ steps.pr_details.outputs.data.base.ref }}"
       shell: bash
     - name: Build and run in Docker container
       uses: addnab/docker-run-action@v3
