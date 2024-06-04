@@ -29,6 +29,9 @@ git cms-addpkg RecoTracker/LST RecoTracker/LSTCore Configuration/ProcessModifier
 eval `scramv1 runtime -sh`
 echo "Building CMSSW..."
 scram b -j 4
+# Download data files
+cd RecoTracker/LSTCore
+git clone --branch initial https://github.com/SegmentLinking/RecoTracker-LSTCore.git RecoTracker/LSTCore/data
 echo "Starting LST test..."
 cmsDriver.py step3 -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM --conditions auto:phase2_realistic_T21 --datatier GEN-SIM-RECO,DQMIO -n 100 --eventcontent RECOSIM,DQM --geometry Extended2026D88 --era Phase2C17I13M9 --procModifiers trackingLST,trackingIters01 --nThreads 4 --no_exec
 sed -i "28i process.load('Configuration.StandardSequences.Accelerators_cff')\nprocess.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
@@ -67,12 +70,12 @@ makeTrackValidationPlots.py --extended -o plots_pdf master.root This_PR.root
 makeTrackValidationPlots.py --extended --png -o plots_png master.root This_PR.root
 
 # Copy a few plots that will be attached in the PR comment
-mkdir $ARCHIVE_DIR
-cp plots_png/plots_ootb/effandfakePtEtaPhi.png $ARCHIVE_DIR
+mkdir /home/TrackLooper/$ARCHIVE_DIR
+cp plots_png/plots_ootb/effandfakePtEtaPhi.png /home/TrackLooper/$ARCHIVE_DIR
 
 mkdir plots
 cp -r plots_pdf/plots_ootb plots
 cp -r plots_pdf/plots_highPurity plots
 cp -r plots_pdf/plots_building_highPtTripletStep plots
 rm -r plots/plots_ootb/*/ plots/plots_highPurity/*/ plots/plots_building_highPtTripletStep/*/
-tar zcf $ARCHIVE_DIR/plots.tar.gz plots
+tar zcf /home/TrackLooper/$ARCHIVE_DIR/plots.tar.gz plots
