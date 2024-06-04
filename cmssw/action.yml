@@ -75,6 +75,8 @@ runs:
       uses: octokit/request-action@v2.x
       with:
         route: GET /repos/${{ github.repository_owner }}/cmssw/pulls/${{ inputs.pr-number }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Print target branch
       run: echo "Target branch ${{ steps.pr_details.outputs.data.base.ref }}"
       shell: bash
