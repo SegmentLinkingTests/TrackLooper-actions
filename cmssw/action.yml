@@ -70,6 +70,13 @@ runs:
         sudo rm -rf /opt/hostedtoolcache/CodeQL
         sudo rm -rf /usr/local/share/boost
         sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+    - name: Get PR details
+        id: pr_details
+        uses: octokit/request-action@v2.x
+        with:
+          route: GET /repos/${{ github.repository_owner }}/cmssw/pulls/${{ inputs.pr-number }}
+    - name: Print target branch
+      run: echo "Target branch: ${{ steps.pr_details.outputs.data.base.ref }}"
     - name: Build and run in Docker container
       uses: addnab/docker-run-action@v3
       with:
