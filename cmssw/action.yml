@@ -70,15 +70,20 @@ runs:
         sudo rm -rf /opt/hostedtoolcache/CodeQL
         sudo rm -rf /usr/local/share/boost
         sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-    - name: Get PR details
-      id: pr_details
-      uses: octokit/request-action@v2.x
+    - name: Get PR target branch
+      id: get_target_branch
+      uses: actions/github-script@v7
       with:
-        route: GET /repos/${{ github.repository_owner }}/cmssw/pulls/${{ inputs.pr-number }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        result-encoding: string
+        script: |
+          const { data: pullRequest } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: "cmssw",
+            pull_number: "${{ inputs.pr-number }}",
+          });
+          return pullRequest.base.ref;
     - name: Print target branch
-      run: echo "Target branch ${{ steps.pr_details.outputs.data.base.ref }}"
+      run: echo "Target branch ${{ steps.get_target_branch.outputs.result }}"
       shell: bash
     - name: Build and run in Docker container
       uses: addnab/docker-run-action@v3
