@@ -35,7 +35,7 @@ runs:
       run: |
         ARCHIVE_REPO=${{ github.repository_owner }}/TrackLooper-plots-archive
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
-        ARCHIVE_BRANCH=main
+        ARCHIVE_BRANCH=cmssw
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
         ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_standalone
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
