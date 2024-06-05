@@ -25,24 +25,24 @@ createPerfNumDenHists -i LSTNtuple_after.root -o LSTNumDen_after.root
 echo "Creating validation plots..."
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
 
-# Checkout the master branch so we can compare what has changed
+# Checkout the target branch so we can compare what has changed
 git stash
 PRSHA=$(git rev-parse HEAD)
 git checkout origin/${TARGET_BRANCH}
 
-# Build and run master. Create comparison plots
+# Build and run target. Create comparison plots
 echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
-# Only CPU version is compiled since the master branch has already been tested
+# Only CPU version is compiled since the target branch has already been tested
 sdl_make_tracklooper -mcCs
 echo "Running LST..."
-sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 | tee -a /home/TrackLooper/timing_master.txt
+sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 | tee -a /home/TrackLooper/timing_target.txt
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
 # Go back to the PR commit so that the git tag is consistent everywhere
 git checkout $PRSHA
 echo "Creating comparison plots..."
-python3 efficiency/python/lst_plot_performance.py --compare LSTNumDen_after.root LSTNumDen_before.root --comp_labels This_PR,master -t "comparison_plots"
+python3 efficiency/python/lst_plot_performance.py --compare LSTNumDen_after.root LSTNumDen_before.root --comp_labels this_PR,target_branch -t "comparison_plots"
 
 # Copy a few plots that will be attached in the PR comment
 mkdir /home/TrackLooper/$ARCHIVE_DIR

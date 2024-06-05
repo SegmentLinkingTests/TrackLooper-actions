@@ -41,15 +41,15 @@ cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsDriver.py step4 -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM --conditions auto:phase2_realistic_T21 --mc  --geometry Extended2026D88 --scenario pp --filetype DQM --era Phase2C17I13M9 -n 100 --no_exec
 sed -i "s|fileNames = cms.untracked.vstring('file:step4_RECO.root')|fileNames = cms.untracked.vstring('file:step3_RAW2DIGI_RECO_VALIDATION_DQM_inDQM.root')|" step4_HARVESTING.py
 cmsRun step4_HARVESTING.py
-mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root This_PR.root
+mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root this_PR.root
 rm step3_*.root
 
-# Checkout the master branch so we can compare what has changed
+# Checkout the target branch so we can compare what has changed
 git stash
 PRSHA=$(git rev-parse HEAD)
 git checkout SegLink/${TARGET_BRANCH}
 
-# Build and run master
+# Build and run target
 eval `scramv1 runtime -sh`
 # Recompile CMSSW in case anything changed in the headers
 scram b clean
@@ -57,13 +57,13 @@ scram b -j 4
 echo "Running 21034.1 workflow..."
 cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsRun step4_HARVESTING.py
-mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root master.root
+mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root target_branch.root
 # Go back to the PR commit so that the git tag is consistent everywhere
 git checkout $PRSHA
 
 # Create comparison plots
-makeTrackValidationPlots.py --extended -o plots_pdf master.root This_PR.root
-makeTrackValidationPlots.py --extended --png -o plots_png master.root This_PR.root
+makeTrackValidationPlots.py --extended -o plots_pdf target_branch.root this_PR.root
+makeTrackValidationPlots.py --extended --png -o plots_png target_branch.root this_PR.root
 
 # Copy a few plots that will be attached in the PR comment
 mkdir /home/TrackLooper/$ARCHIVE_DIR
