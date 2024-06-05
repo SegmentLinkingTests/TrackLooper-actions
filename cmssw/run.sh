@@ -1,75 +1,33 @@
 #!/bin/env bash
 
-CMSSW_DEFAULT_BRANCH=CMSSW_14_1_0_pre3_LST_X
-
-if [ -n "$CMSSW_BRANCH" ]; then
-  # Remove \r and other control characters that could be in there (newline characters in github are \r\n)
-  CMSSW_BRANCH=$(echo $CMSSW_BRANCH | tr -d '[:cntrl:]')
-  # If the branch is an integer, interpret it as a PR number
-  if [[ "$CMSSW_BRANCH" =~ ^[0-9]+$ ]]; then
-    CMSSW_BRANCH="refs/pull/${CMSSW_BRANCH}/head"
-  fi
-  # Validate the cmssw branch name to avoid code injection
-  CMSSW_BRANCH=$(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
-fi
-# Set the CMSSW branch to the default one if not specified
-if [ -z "$CMSSW_BRANCH" ] || [ "$CMSSW_BRANCH" == "default" ]; then
-  CMSSW_BRANCH=$CMSSW_DEFAULT_BRANCH
-fi
+CMSSW_VERSION=CMSSW_14_1_0_pre3
 
 # Print all commands and exit on error
 set -e -v
 
-# Temporarily merge the master branch
-git checkout -b pr_branch
-git fetch --unshallow || echo "" # It might be worth switching actions/checkout to use depth 0 later on
-git config user.email "gha@example.com" && git config user.name "GHA" # For some reason this is needed even though nothing is being committed
-git merge --no-commit --no-ff origin/master || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
-
 # Build and run the PR
-echo "Running setup script..."
-source setup.sh
-echo "Building and LST..."
-sdl_make_tracklooper -mcAs
-echo "Setting up CMSSW..."
+echo "Initializing CMSSW..."
+source /cvmfs/cms.cern.ch/cmsset_default.sh
 scramv1 project CMSSW $CMSSW_VERSION
 cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
-git cms-init --upstream-only
+# cms-init is too slow
+# git cms-init --upstream-only
+git init
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
-git fetch SegLink ${CMSSW_BRANCH}:SegLink_cmssw
+git sparse-checkout set .gitignore .clang-format .clangtidy
+git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
 git checkout SegLink_cmssw
-git fetch SegLink $CMSSW_DEFAULT_BRANCH
+git fetch SegLink $TARGET_BRANCH
+# Temporarily merge target branch
 git config user.email "gha@example.com" && git config user.name "GHA"
-git merge -m "Merge default branch" SegLink/$CMSSW_DEFAULT_BRANCH || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
-git cms-addpkg RecoTracker/LST Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
-cat <<EOF >lst_headers.xml
-<tool name="lst_headers" version="1.0">
-  <client>
-    <environment name="LSTBASE" default="$PWD/../../../TrackLooper"/>
-    <environment name="INCLUDE" default="\$LSTBASE"/>
-  </client>
-  <runtime name="LST_BASE" value="\$LSTBASE"/>
-</tool>
-EOF
-cat <<EOF >lst_cpu.xml
-<tool name="lst_cpu" version="1.0">
-  <client>
-    <environment name="LSTBASE" default="$PWD/../../../TrackLooper"/>
-    <environment name="LIBDIR" default="\$LSTBASE/SDL"/>
-    <environment name="INCLUDE" default="\$LSTBASE"/>
-  </client>
-  <runtime name="LST_BASE" value="\$LSTBASE"/>
-  <lib name="sdl_cpu"/>
-</tool>
-EOF
-scram setup lst_headers.xml
-scram setup lst_cpu.xml
+git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git cms-addpkg RecoTracker/LST RecoTracker/LSTCore Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
 eval `scramv1 runtime -sh`
-# We need to remove the Cuda plugin because it fails to compile if there is no GPU
-sed -i '/<library file="alpaka\/\*\.cc" name="RecoTrackerLSTPluginsPortableCuda">/,/<\/library>/d' RecoTracker/LST/plugins/BuildFile.xml
 echo "Building CMSSW..."
 scram b -j 4
+# Download data files
+git clone --branch initial https://github.com/SegmentLinking/RecoTracker-LSTCore.git RecoTracker/LSTCore/data
 echo "Starting LST test..."
 cmsDriver.py step3 -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM --conditions auto:phase2_realistic_T21 --datatier GEN-SIM-RECO,DQMIO -n 100 --eventcontent RECOSIM,DQM --geometry Extended2026D88 --era Phase2C17I13M9 --procModifiers trackingLST,trackingIters01 --nThreads 4 --no_exec
 sed -i "28i process.load('Configuration.StandardSequences.Accelerators_cff')\nprocess.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
@@ -83,47 +41,37 @@ cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsDriver.py step4 -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM --conditions auto:phase2_realistic_T21 --mc  --geometry Extended2026D88 --scenario pp --filetype DQM --era Phase2C17I13M9 -n 100 --no_exec
 sed -i "s|fileNames = cms.untracked.vstring('file:step4_RECO.root')|fileNames = cms.untracked.vstring('file:step3_RAW2DIGI_RECO_VALIDATION_DQM_inDQM.root')|" step4_HARVESTING.py
 cmsRun step4_HARVESTING.py
-mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root This_PR.root
+mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root this_PR.root
 rm step3_*.root
 
-# Checkout the master branch so we can compare what has changed
-cd ../..
+# Checkout the target branch so we can compare what has changed
 git stash
 PRSHA=$(git rev-parse HEAD)
-git checkout origin/master
+git checkout SegLink/${TARGET_BRANCH}
 
-# Build and run master
-echo "Running setup script..."
-source setup.sh
-echo "Building and LST..."
-sdl_make_tracklooper -mcCs
-cd $CMSSW_VERSION/src
+# Build and run target
 eval `scramv1 runtime -sh`
 # Recompile CMSSW in case anything changed in the headers
 scram b clean
-# Go back to the default branch
-git checkout SegLink/$CMSSW_DEFAULT_BRANCH
 scram b -j 4
 echo "Running 21034.1 workflow..."
 cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsRun step4_HARVESTING.py
-mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root master.root
+mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root target_branch.root
 # Go back to the PR commit so that the git tag is consistent everywhere
-cd ../..
 git checkout $PRSHA
-cd $CMSSW_VERSION/src
 
 # Create comparison plots
-makeTrackValidationPlots.py --extended -o plots_pdf master.root This_PR.root
-makeTrackValidationPlots.py --extended --png -o plots_png master.root This_PR.root
+makeTrackValidationPlots.py --extended -o plots_pdf target_branch.root this_PR.root
+makeTrackValidationPlots.py --extended --png -o plots_png target_branch.root this_PR.root
 
 # Copy a few plots that will be attached in the PR comment
-mkdir $TRACKLOOPERDIR/$ARCHIVE_DIR
-cp plots_png/plots_ootb/effandfakePtEtaPhi.png $TRACKLOOPERDIR/$ARCHIVE_DIR
+mkdir /home/TrackLooper/$ARCHIVE_DIR
+cp plots_png/plots_ootb/effandfakePtEtaPhi.png /home/TrackLooper/$ARCHIVE_DIR
 
 mkdir plots
 cp -r plots_pdf/plots_ootb plots
 cp -r plots_pdf/plots_highPurity plots
 cp -r plots_pdf/plots_building_highPtTripletStep plots
 rm -r plots/plots_ootb/*/ plots/plots_highPurity/*/ plots/plots_building_highPtTripletStep/*/
-tar zcf $TRACKLOOPERDIR/$ARCHIVE_DIR/plots.tar.gz plots
+tar zcf /home/TrackLooper/$ARCHIVE_DIR/plots.tar.gz plots
