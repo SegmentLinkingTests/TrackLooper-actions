@@ -1,0 +1,50 @@
+name: 'SCRAM static checks'
+description: 'Runs SCRAM static checks.'
+inputs:
+  pr-number:
+    description: 'PR number'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Copy script to workspace
+      run: cp ${{ github.action_path }}/run.sh ${{ github.workspace }}
+      shell: bash
+    - name: Set up environment variables
+      id: output-vars
+      shell: bash
+      run: |
+        echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
+        echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
+    - name: Mount cvmfs
+      uses: cvmfs-contrib/github-action-cvmfs@v4
+      # For some reason we need to interact with cmssw before using it in Docker because otherwise it fails
+    - name: List files in cvmfs to get it started
+      run: ls /cvmfs/cms.cern.ch/ > /dev/null
+      shell: bash
+    - name: Get PR target branch
+      id: get_target_branch
+      uses: actions/github-script@v7
+      with:
+        result-encoding: string
+        script: |
+          const { data: pullRequest } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: "cmssw",
+            pull_number: "${{ inputs.pr-number }}",
+          });
+          return pullRequest.base.ref;
+    - name: Run checks in Docker container
+      uses: addnab/docker-run-action@v3
+      with:
+        image: cmssw/el8:x86_64
+        shell: bash
+        options: >
+          -v ${{ github.workspace }}:/home/TrackLooper
+          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch
+          -w /home/TrackLooper
+          -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
+          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
+          -e PR_NUMBER=${{ inputs.pr-number }}
+          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
+        run: ./run.sh
