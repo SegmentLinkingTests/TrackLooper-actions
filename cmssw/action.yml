@@ -4,9 +4,6 @@ inputs:
   pr-number:
     description: 'PR number'
     required: true
-  cmssw-branch:
-    description: 'The branch of the CMSSW repo that should be tested'
-    required: true
 outputs:
   archive-repo:
     description: "The repository where the plots will be stored"
