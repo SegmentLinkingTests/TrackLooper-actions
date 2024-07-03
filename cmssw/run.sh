@@ -30,7 +30,10 @@ scram b -j 4
 git clone https://github.com/SegmentLinking/RecoTracker-LSTCore.git RecoTracker/LSTCore/data
 echo "Starting LST test..."
 cmsDriver.py step3 -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM --conditions auto:phase2_realistic_T21 --datatier GEN-SIM-RECO,DQMIO -n 100 --eventcontent RECOSIM,DQM --geometry Extended2026D88 --era Phase2C17I13M9 --procModifiers trackingLST,trackingIters01 --nThreads 4 --no_exec
-sed -i "28i process.load('Configuration.StandardSequences.Accelerators_cff')\nprocess.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
+sed -i "28i process.load('Configuration.StandardSequences.Accelerators_cff')\nprocess.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')\n" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
+if [[ "$LOW_PT" == "true" ]]; then
+  sed -i "30i process.load('RecoTracker.LST.lstModulesDevESProducer_cfi')\nprocess.load('RecoTracker.LST.lstProducer_cfi')\nprocess.lstModulesDevESProducer.ptCutLabel = '0.6'\nprocess.lstProducer.ptCutLabel = '0.6'\nprocess.lstProducer.ptCut = 0.6" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
+fi
 sed -i "s|fileNames = cms.untracked.vstring('file:step3_DIGI2RAW.root')|fileNames = cms.untracked.vstring('file:/data2/segmentlinking/step2_21034.1_100Events.root')|" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 echo "Setting up siteconf..."
 git clone https://github.com/cms-sw/siteconf.git

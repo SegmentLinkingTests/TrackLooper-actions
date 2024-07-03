@@ -36,8 +36,9 @@ source setup.sh
 echo "Building and LST..."
 # Only CPU version is compiled since the target branch has already been tested
 sdl_make_tracklooper -mcCs
+LOW_PT_FLAG=$([[ $LOW_PT == "true" ]] && echo "--ptCut 0.6" || echo "")
 echo "Running LST..."
-sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 | tee -a /home/TrackLooper/timing_target.txt
+sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_target.txt
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
 # Go back to the PR commit so that the git tag is consistent everywhere
 git checkout $PRSHA

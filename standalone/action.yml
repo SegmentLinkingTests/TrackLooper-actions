@@ -4,6 +4,9 @@ inputs:
   pr-number:
     description: 'PR number'
     required: true
+  low-pt:
+    description: 'Controls whether the low pT setup should be used'
+    required: true
 outputs:
   archive-repo:
     description: "The repository where the plots will be stored."
@@ -65,16 +68,18 @@ runs:
           -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
           -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
           -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
+          -e LOW_PT=${{ inputs.low-pt }}
         run: ./run.sh
     - name: Set output comment
       id: output-comment
       shell: bash
       run: |
+        LOW_PT="$( [[ ${{ inputs.low-pt }} == 'true' ]] && echo ' (low pT setup)' || echo '' )"
         ARCHIVE_REPO=${{ steps.output-vars.outputs.archive-repo }}
         ARCHIVE_BRANCH=${{ steps.output-vars.outputs.archive-branch }}
         ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
         COMMENT=$(cat <<EOF
-        The PR was built and ran successfully in standalone mode. Here are some of the comparison plots.
+        The PR was built and ran successfully in standalone mode${LOW_PT}. Here are some of the comparison plots.
 
         <table>
           <tr>

@@ -4,6 +4,9 @@ inputs:
   pr-number:
     description: 'PR number'
     required: true
+  low-pt:
+    description: 'Controls whether the low pT setup should be used'
+    required: true
 outputs:
   archive-repo:
     description: "The repository where the plots will be stored"
@@ -27,6 +30,7 @@ runs:
       id: output-vars
       shell: bash
       run: |
+        LOW_PT="$( [[ ${{ inputs.low-pt }} == 'true' ]] && echo ' (low pT setup)' || echo '' )"
         ARCHIVE_REPO=${{ github.repository_owner }}/TrackLooper-plots-archive
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=cmssw
@@ -34,7 +38,7 @@ runs:
         ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_cmssw
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         COMMENT=$(cat <<EOF
-        The PR was built and ran successfully with CMSSW. Here are some plots.
+        The PR was built and ran successfully with CMSSW${LOW_PT}. Here are some plots.
         <table>
           <tr>
             OOTB All Tracks
@@ -92,4 +96,5 @@ runs:
           -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
           -e PR_NUMBER=${{ inputs.pr-number }}
           -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
+          -e LOW_PT=${{ inputs.low-pt }}
         run: ./run.sh
