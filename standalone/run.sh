@@ -19,8 +19,9 @@ echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
 sdl_make_tracklooper -mcAs
+LOW_PT_FLAG=$([[ $LOW_PT == "true" ]] && echo "--ptCut 0.6" || echo "")
 echo "Running LST..."
-sdl_cpu -i PU200 -o LSTNtuple_after.root -s 4 -v 1 | tee -a /home/TrackLooper/timing_PR.txt
+sdl_cpu -i PU200 -o LSTNtuple_after.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_PR.txt
 createPerfNumDenHists -i LSTNtuple_after.root -o LSTNumDen_after.root
 echo "Creating validation plots..."
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
@@ -36,7 +37,6 @@ source setup.sh
 echo "Building and LST..."
 # Only CPU version is compiled since the target branch has already been tested
 sdl_make_tracklooper -mcCs
-LOW_PT_FLAG=$([[ $LOW_PT == "true" ]] && echo "--ptCut 0.6" || echo "")
 echo "Running LST..."
 sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_target.txt
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
