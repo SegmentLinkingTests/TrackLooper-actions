@@ -14,7 +14,7 @@ eval `scramv1 runtime -sh`
 # cms-init is too slow
 # git cms-init --upstream-only
 git init
-git remote add SegLink https://github.com/SegmentLinking/cmssw.git
+git remote add SegLink https://github.com/SegmentLinkingTests/cmssw.git
 git sparse-checkout set .gitignore .clang-format .clangtidy
 git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
 git checkout SegLink_cmssw
