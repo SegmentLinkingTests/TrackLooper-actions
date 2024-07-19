@@ -36,7 +36,7 @@ scramv1 project CMSSW $CMSSW_VERSION
 cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
 git cms-init --upstream-only
-git remote add SegLink https://github.com/SegmentLinking/cmssw.git
+git remote add SegLink https://github.com/SegmentLinkingTests/cmssw.git
 git fetch SegLink ${CMSSW_BRANCH}:SegLink_cmssw
 git checkout SegLink_cmssw
 git fetch SegLink $CMSSW_DEFAULT_BRANCH
